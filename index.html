@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotorPH Payroll System</title>
+    
+    <!-- FontAwesome & Tailwind CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* The Theme (Skin) */
+        :root {
+            --bg-sidebar: #13151a;
+            --bg-main: #1c1e26;
+            --bg-card: #282a36;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a4b8;
+            --accent-blue: #3b82f6;
+            --accent-red: #f84b4b; /* MotorPH logo red */
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --border-color: #343746;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            overflow: hidden; 
+        }
+
+        /* --- APP LAYOUT CONTAINER --- */
+        .app-layout { display: none; width: 100%; height: 100vh; }
+        .app-layout.active { display: flex; }
+
+        /* The Spine (Sidebar) */
+        .sidebar { width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
+        .logo-area { height: 70px; display: flex; align-items: center; padding-left: 24px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-sidebar); font-size: 26px; font-weight: 900; letter-spacing: 2px; color: #ffffff; }
+        .logo-area span { color: var(--accent-red); margin-left: 8px; }
+        
+        .nav-section-title { color: #ffffff; font-size: 13px; font-weight: 700; padding: 24px 20px 8px 20px; }
+        .nav-links { padding: 0 10px; display: flex; flex-direction: column; gap: 5px; }
+        .nav-item { padding: 12px 16px; border-radius: 8px; color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 13px; transition: all 0.2s; cursor: pointer; }
+        .nav-item:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-primary); }
+        .nav-item.active { background-color: var(--accent-blue); color: white; }
+
+        /* The Torso (Main Content) */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        
+        /* The Head (Header) - STICKY */
+        .header { height: 70px; background-color: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; flex-shrink: 0; position: sticky; top: 0; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 20px; font-size: 18px; font-weight: 600; }
+        
+        /* Profile Hover Dropdown System */
+        .profile-container { position: relative; display: inline-block; }
+        .profile-btn { width: 40px; height: 40px; border-radius: 50%; background-color: var(--bg-card); display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color); cursor: pointer; transition: border-color 0.2s; }
+        .profile-container:hover .profile-btn { border-color: var(--accent-blue); }
+        .profile-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; background-color: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); width: 220px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; z-index: 200; }
+        .profile-container:hover .profile-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
+        .profile-info { padding: 16px; }
+        .profile-name { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+        .profile-role { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+        .dropdown-divider { height: 1px; background-color: var(--border-color); }
+        .dropdown-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: var(--accent-red); text-decoration: none; font-size: 14px; font-weight: 600; transition: background-color 0.2s; border-radius: 0 0 8px 8px; cursor: pointer; }
+        .dropdown-item:hover { background-color: rgba(239, 68, 68, 0.1); }
+
+        /* View Switching Logic */
+        .page-view { display: none; padding: 30px; animation: fadeIn 0.3s ease-in-out; }
+        .page-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Core Helper Classes */
+        .card { background-color: var(--bg-card); border-radius: 12px; padding: 24px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .btn { background-color: var(--accent-blue); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .btn:hover { background-color: #2563eb; }
+        .btn-full { width: 100%; margin-top: auto; padding: 12px; text-align: center; }
+        .btn-outline { background-color: transparent; border: 1px solid var(--accent-blue); color: var(--accent-blue); }
+        .btn-outline:hover { background-color: rgba(59, 130, 246, 0.1); }
+
+        /* --- DASHBOARD SPECIFIC CSS --- */
+        .banner-card { background: linear-gradient(135deg, var(--accent-blue) 0%, #1e3a8a 100%); border-radius: 12px; padding: 30px; margin-bottom: 24px; color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .banner-subtitle { font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; opacity: 0.9; font-weight: 600; }
+        .banner-title { font-size: 32px; font-weight: 800; margin-bottom: 15px; }
+        .banner-metrics { font-size: 15px; font-weight: 500; opacity: 0.95; display: flex; gap: 20px; align-items: center; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
+        @media (max-width: 1100px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        .metric-card { background-color: var(--bg-card); border-radius: 12px; padding: 24px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; height: 100%; }
+        .card-header { color: var(--text-primary); font-size: 16px; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .metric-card-subtitle { color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin-bottom: 20px; }
+        .metric-list { list-style: none; margin-bottom: 24px; flex-grow: 1; }
+        .metric-list li { margin-bottom: 16px; font-size: 13px; display: flex; align-items: flex-start; gap: 12px; line-height: 1.5; color: var(--text-secondary); }
+        .metric-list li strong { color: var(--text-primary); display: inline-block; margin-bottom: 2px; }
+        .metric-list li i { margin-top: 3px; font-size: 12px; }
+        .icon-red { color: var(--accent-red); } .icon-yellow { color: var(--accent-orange); } .icon-green { color: var(--accent-green); } .icon-gray { color: #6b7280; }
+        .card.full { grid-column: span 1; background-color: var(--bg-card); border-radius: 12px; padding: 24px; border: 1px solid var(--border-color); }
+        .news-list { display: flex; flex-direction: column; gap: 16px; margin-top: 20px; }
+        .news-item { background: rgba(0, 0, 0, 0.2); padding: 16px 20px; border-radius: 8px; border-left: 4px solid var(--accent-blue); cursor: pointer; transition: background-color 0.2s ease; }
+        .news-item:hover { background: rgba(255, 255, 255, 0.05); }
+        .news-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-weight: 700; color: var(--text-primary); }
+        .badge-new { background-color: var(--accent-red); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; text-transform: uppercase; font-weight: bold; margin-left: 5px; }
+
+        /* --- INNER TAB LOGIC FOR DTR, COMP, & CONFIG (ISOLATED) --- */
+        .dtr-tab, .comp-tab, .config-tab { cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .dtr-tab.active, .comp-tab.active, .config-tab.active { border-bottom: 2px solid var(--accent-blue); font-weight: 700; color: var(--accent-blue) !important; }
+        
+        .dtr-content, .comp-content, .config-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .dtr-content.active, .comp-content.active, .config-content.active { display: block; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* GENERAL TABLES & BADGES */
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .data-table th, .data-table td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .data-table th { color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 12px; }
+        .data-table tr:hover { background-color: rgba(255, 255, 255, 0.02); }
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-red { background-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .badge-orange { background-color: rgba(245, 158, 11, 0.2); color: var(--accent-orange); }
+
+        /* ========================================================================= */
+        /* --- MID-FIDELITY OVERRIDES --- */
+        /* ========================================================================= */
+        :root {
+            --bg-sidebar: #f3f4f6 !important;
+            --bg-main: #ffffff !important;
+            --bg-card: #ffffff !important;
+            --text-primary: #111827 !important;
+            --text-secondary: #4b5563 !important;
+            --border-color: #d1d5db !important;
+        }
+
+        * {
+            box-shadow: none !important;
+            border-radius: 4px !important; 
+        }
+
+        /* Override hardcoded dark text classes */
+        .text-white, .logo-area, .nav-section-title, .login-logo { color: var(--text-primary) !important; }
+        .text-gray-300, .text-gray-400 { color: var(--text-secondary) !important; }
+        
+        /* Flatten dark backgrounds into light wireframe backgrounds */
+        .bg-\[\#1f212b\], .bg-\[\#181a20\], .bg-gray-800 { background-color: #f9fafb !important; border-bottom: 1px solid var(--border-color) !important; color: var(--text-primary) !important;}
+        .bg-black\/20 { background-color: transparent !important; opacity: 1 !important; color: var(--text-secondary) !important; }
+        .bg-black\/70 { background-color: rgba(255, 255, 255, 0.95) !important; }
+        .hover\:bg-white\/5:hover { background-color: #f3f4f6 !important; }
+
+        .banner-card { background: var(--bg-sidebar) !important; color: var(--text-primary) !important; border: 1px solid var(--border-color) !important; }
+        
+        /* Turn polished colored badges into simple wireframe outlines */
+        .bg-emerald-500\/20 { background-color: transparent !important; border: 1px solid var(--accent-green) !important; color: var(--accent-green) !important; }
+        .bg-red-500\/20, .bg-red-900\/10 { background-color: transparent !important; border: 1px solid var(--accent-red) !important; color: var(--accent-red) !important; }
+        .bg-\[var\(--accent-red\)\] { background-color: #ffffff !important; border: 1px solid var(--accent-red) !important; color: var(--accent-red) !important; }
+        .bg-gray-500\/20, .bg-gray-700\/30 { background-color: transparent !important; border: 1px dashed var(--text-secondary) !important; color: var(--text-secondary) !important; }
+
+        /* Flatten buttons and navigation items */
+        .btn { background-color: var(--accent-blue) !important; color: #ffffff !important; border: none !important; font-weight: bold !important; }
+        .btn:hover { background-color: #1e40af !important; }
+        .nav-item.active { background-color: var(--border-color) !important; color: var(--text-primary) !important; font-weight: 800 !important; }
+        .nav-item.active i { color: var(--text-primary) !important; }
+
+        h1, h2, h3, h4, span, div, td, th { text-shadow: none !important; }
+        .hidden { display: none !important; }
+
+        /* Flatten News Items & Badges */
+        .news-item { 
+            background: #ffffff !important; 
+            border-top: 1px solid var(--border-color) !important;
+            border-right: 1px solid var(--border-color) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+        .news-item:hover { background: var(--bg-sidebar) !important; }
+        .badge-new { 
+            background-color: transparent !important; 
+            color: var(--accent-red) !important; 
+            border: 1px solid var(--accent-red) !important; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 2. MAIN APPLICATION -->
+    <div id="app-layout" class="app-layout active">
+        
+        <!-- SIDEBAR -->
+        <nav class="sidebar">
+            <div class="logo-area">MOTOR<span>PH</span></div>
+            <div class="nav-section-title">Main Navigation</div>
+            <div class="nav-links">
+                <a class="nav-item" data-target="view-dashboard"><i class="fas fa-home"></i> DASH BOARD</a>
+                <a class="nav-item" data-target="view-exceptions"><i class="fas fa-exclamation-triangle"></i> EXCEPTION REPORT</a>
+                <a class="nav-item" data-target="view-dtr"><i class="fas fa-clock"></i> EMPLOYEE DTR</a>
+                <a class="nav-item" data-target="view-payroll"><i class="fas fa-file-invoice-dollar"></i> PAYROLL COMP</a>
+            </div>
+            <div class="nav-section-title">Maintenance</div>
+            <div class="nav-links">
+                <a class="nav-item active" data-target="view-maintenance"><i class="fas fa-cog"></i> PAYROLL CONFIG</a>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            
+            <header class="header">
+                <div class="header-left"><i class="fas fa-bars text-[var(--text-secondary)] cursor-pointer"></i><span id="header-title">PAYROLL CONFIG</span></div>
+                <div class="profile-container">
+                    <div class="profile-btn"><i class="fas fa-user"></i></div>
+                    <div class="profile-dropdown">
+                        <div class="profile-info"><div class="profile-name">Juan dela Cruz</div><div class="profile-role">Payroll Staff</div></div>
+                        <div class="dropdown-divider"></div>
+                        <a id="btn-logout" class="dropdown-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ==========================================
+                 PAGE 1: THE MASTER DASHBOARD VIEW 
+                 ========================================== -->
+            <div id="view-dashboard" class="page-view">
+                
+                <div class="banner-card">
+                    <div class="banner-subtitle">Current Payroll Period</div>
+                    <div class="banner-title global-cutoff-display">September 1 - September 15, 2026</div> <!-- Added hook for display -->
+                    <div class="banner-metrics">
+                        <span><i class="fas fa-users" style="margin-right: 5px;"></i> 5 Active Employees</span>
+                        <span>|</span>
+                        <span><i class="fas fa-clock" style="margin-right: 5px;"></i> 552.12 Hours Logged</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="metric-card">
+                        <div class="card-header">Exception Summary</div>
+                        <div class="metric-card-subtitle">Provides a triage view of pending issues, highlighting both the volume and urgency of anomalies.</div>
+                        <ul class="metric-list">
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>5 Total Unresolved Exceptions:</strong> The aggregate count of all pending issues across all categories.</span></li>
+                            <li><i class="fas fa-circle icon-red"></i> <span><strong>1 Critical Blocker:</strong> Exception (Unauthorized leave) that strictly prevents payroll generation.</span></li>
+                            <li><i class="fas fa-circle icon-yellow"></i> <span><strong>1 Audit Warning:</strong> Anomaly (Missing bank details) requiring auditor review for error prevention.</span></li>
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>0 Retroactive Exceptions:</strong> Newly raised issues pertaining to previous cutoff periods.</span></li>
+                        </ul>
+                        <button class="btn btn-full" onclick="navigateTo('view-exceptions')">Review Exception Report</button>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">DTR Summary</div>
+                        <div class="metric-card-subtitle">Provides an immediate snapshot of the employee's timekeeping data for the current cutoff period.</div>
+                        <ul class="metric-list">
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>552.12 Total Hours Worked:</strong> Regular billable hours accumulated in the current pay period.</span></li>
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>272m Tardiness & 25m Undertime:</strong> Total time late or early out, essential for payroll deductions.</span></li>
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>1,804m Overtime (OT) Hours:</strong> A breakdown of approved versus unapproved overtime.</span></li>
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>1 Unauthorized Leave of Absence:</strong> Tracked as approved leaves versus unapproved absences.</span></li>
+                            <li><i class="fas fa-circle icon-red"></i> <span><strong>3 Flagged Exceptions:</strong> Total count of unapproved overtime, missing logs, and unapproved absences.</span></li>
+                        </ul>
+                        <button class="btn btn-full" onclick="navigateTo('view-dtr')">Review Employee DTR</button>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="card-header">Financial Snapshot</div>
+                        <div class="metric-card-subtitle">Provides approvers with an immediate view of the total cash outflow required for the current payroll run.</div>
+                        <ul class="metric-list">
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>₱ 48,966.08 Current Net Payroll:</strong> The actual cash disbursement required for employee bank transfers this period.</span></li>
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>₱ 47,482.08 Previous Net Payroll:</strong> The comparative cash disbursement required for the exact same period last month.</span></li>
+                            <li><i class="fas fa-circle icon-gray"></i> <span><strong>+₱ 1,484.00 Net Payroll Variance:</strong> The calculated fluctuation to spot abnormal cost spikes.</span></li>
+                            <li><i class="fas fa-circle icon-red"></i> <span><strong>2 Flagged Exceptions:</strong> Total count of pending Calculation Outliers and Data Validation Failures.</span></li>
+                        </ul>
+                        <button class="btn btn-full" onclick="navigateTo('view-payroll')">Review Payroll Computation</button>
+                    </div>
+                </div>
+
+                <div class="card full">
+                    <div class="card-header">Regulatory Updates & Agency News</div>
+                    <div class="news-list">
+                        <div class="news-item" style="border-left-color: var(--accent-orange);">
+                            <div class="news-header"><i class="fas fa-bullhorn"></i> DOLE <span class="badge-new">New</span></div>
+                            <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+                                <strong style="color: var(--text-primary);">Wage Order No. NCR-28 (Effective Sept 26, 2026):</strong> Implementation of the ₱60 daily minimum wage increase for non-agricultural workers.
+                            </div>
+                        </div>
+                        <div class="news-item" style="border-left-color: var(--accent-blue);">
+                            <div class="news-header"><i class="fas fa-file-invoice"></i> BIR</div>
+                            <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+                                <strong style="color: var(--text-primary);">Tax Withholding Advisory:</strong> Reminder on the updated BIR annualized tax computation guidelines for 13th-month pay.
+                            </div>
+                        </div>
+                        <div class="news-item" style="border-left-color: var(--accent-green);">
+                            <div class="news-header"><i class="fas fa-hospital"></i> PhilHealth</div>
+                            <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+                                <strong style="color: var(--text-primary);">Premium Contribution Update:</strong> Final notice on the scheduled adjustment of PhilHealth premium rates for Q4 2026.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 PAGE 2: THE EXCEPTION REPORT VIEW 
+                 ========================================== -->
+            <div id="view-exceptions" class="page-view">
+                
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white mb-1">Exception Report</h1>
+                    <p class="text-[var(--text-secondary)] text-sm mb-5">Centralized triage queue for all unresolved timekeeping and computation anomalies.</p>
+
+                    <div class="flex flex-wrap gap-4 items-center justify-between bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)]">
+                        <div class="flex gap-4">
+                            <div class="flex flex-col">
+                                <label class="text-xs uppercase text-[var(--text-secondary)] font-bold mb-1">Cutoff Period</label>
+                                <!-- ADDED HOOK: global-cutoff-select -->
+                                <select class="global-cutoff-select bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                                    <option>Sep 01, 2026 - Sep 15, 2026</option>
+                                    <option>Aug 16, 2026 - Aug 31, 2026</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs uppercase text-[var(--text-secondary)] font-bold mb-1">Exception Source</label>
+                                <select class="bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                                    <option>All Sources</option>
+                                    <option>Employee DTR</option>
+                                    <option>Payroll Computation</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="bg-[var(--accent-red)] text-white text-xs font-bold px-3 py-1.5 rounded-full">5 Total Pending</span>
+                            <button class="btn btn-outline text-sm py-1.5 px-3"><i class="fas fa-download mr-1"></i> Export Report</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONSOLIDATED EXCEPTION TABLE -->
+                <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#1f212b] border-b border-[var(--border-color)]">
+                            <tr>
+                                <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Employee</th>
+                                <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Source Module</th>
+                                <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Discrepancy Detail</th>
+                                <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Status</th>
+                                <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[var(--border-color)]">
+                            
+                            <!-- DTR Exceptions -->
+                            <tr class="hover:bg-white/5">
+                                <td class="p-4 font-medium text-white">Micko Lagundino <span class="text-xs text-[var(--text-secondary)] block">Finance</span></td>
+                                <td class="p-4"><span class="text-[var(--accent-blue)] font-semibold"><i class="fas fa-clock mr-1"></i> Employee DTR</span></td>
+                                <td class="p-4 text-[var(--accent-orange)]">Unapproved Overtime <br><span class="text-xs text-[var(--text-secondary)]">Sep 07: 193m OT beyond schedule</span></td>
+                                <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="navigateToAndTab('view-dtr', 'tab-exception')">Audit</button></td>
+                            </tr>
+                            <tr class="hover:bg-white/5">
+                                <td class="p-4 font-medium text-white">Limbert Lincoln Juaño <span class="text-xs text-[var(--text-secondary)] block">Sales</span></td>
+                                <td class="p-4"><span class="text-[var(--accent-blue)] font-semibold"><i class="fas fa-clock mr-1"></i> Employee DTR</span></td>
+                                <td class="p-4 text-[var(--accent-orange)]">Missing Time Out <br><span class="text-xs text-[var(--text-secondary)]">Sep 14: Missing punch-out</span></td>
+                                <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="navigateToAndTab('view-dtr', 'tab-exception')">Audit</button></td>
+                            </tr>
+                            <tr class="hover:bg-white/5">
+                                <td class="p-4 font-medium text-white">Nikko Octavo <span class="text-xs text-[var(--text-secondary)] block">Marketing</span></td>
+                                <td class="p-4"><span class="text-[var(--accent-blue)] font-semibold"><i class="fas fa-clock mr-1"></i> Employee DTR</span></td>
+                                <td class="p-4 text-[var(--accent-red)]">Unauthorized Leave <br><span class="text-xs text-[var(--text-secondary)]">Sep 08: No attendance records</span></td>
+                                <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="navigateToAndTab('view-dtr', 'tab-exception')">Audit</button></td>
+                            </tr>
+
+                            <!-- Payroll Comp Exceptions -->
+                            <tr class="hover:bg-white/5">
+                                <td class="p-4 font-medium text-white">Seth William Mores <span class="text-xs text-[var(--text-secondary)] block">Sales</span></td>
+                                <td class="p-4"><span class="text-emerald-400 font-semibold"><i class="fas fa-file-invoice-dollar mr-1"></i> Payroll Comp</span></td>
+                                <td class="p-4 text-yellow-500">High Net Pay Variance <br><span class="text-xs text-[var(--text-secondary)]">+28.2% Exceeds 20% threshold</span></td>
+                                <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="navigateToAndTab('view-payroll', 'tab-comp-exception')">Audit</button></td>
+                            </tr>
+                            <tr class="hover:bg-white/5">
+                                <td class="p-4 font-medium text-white">Ralf Kevin Pano <span class="text-xs text-[var(--text-secondary)] block">Sales</span></td>
+                                <td class="p-4"><span class="text-emerald-400 font-semibold"><i class="fas fa-file-invoice-dollar mr-1"></i> Payroll Comp</span></td>
+                                <td class="p-4 text-orange-500">Missing Bank Details <br><span class="text-xs text-[var(--text-secondary)]">Invalid account routing number</span></td>
+                                <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="navigateToAndTab('view-payroll', 'tab-comp-exception')">Audit</button></td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+<!-- ==========================================
+                 PAGE 3: THE FULLY POPULATED DTR VIEW 
+                 ========================================== -->
+<div id="view-dtr" class="page-view">
+                
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white mb-1">Employee DTR</h1>
+                    <p class="text-[var(--text-secondary)] text-sm mb-5">Review attendance logs, track discrepancies, and audit cutoff hours.</p>
+
+                    <div class="flex flex-wrap gap-4 items-center justify-between bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)]">
+                        <div class="flex gap-4">
+                            <div class="flex flex-col">
+                                <label class="text-xs uppercase text-[var(--text-secondary)] font-bold mb-1">Cutoff Period</label>
+                                <!-- ADDED HOOK: global-cutoff-select -->
+                                <select class="global-cutoff-select bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                                    <option>Sep 01, 2026 - Sep 15, 2026</option>
+                                    <option>Aug 16, 2026 - Aug 31, 2026</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs uppercase text-[var(--text-secondary)] font-bold mb-1">Department</label>
+                                <select class="bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                                    <option>All Departments</option>
+                                    <option>Finance</option>
+                                    <option>Sales</option>
+                                    <option>Marketing</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="relative w-64">
+                            <i class="fas fa-search absolute left-3 top-3 text-[var(--text-secondary)] text-sm"></i>
+                            <input type="text" placeholder="Search employee..." class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-2 pl-9 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DTR TABS -->
+                <div class="flex border-b border-[var(--border-color)] mb-6">
+                    <div class="dtr-tab active border-[var(--accent-blue)] px-6 py-3 text-sm font-semibold flex items-center gap-2" style="color: var(--accent-blue);" onclick="switchDtrTab('tab-exception')">
+                        DTR Exception List 
+                        <span class="bg-[var(--accent-red)] text-white text-[10px] px-2 py-0.5 rounded-full">3 Pending</span>
+                    </div>
+                    <div class="dtr-tab border-transparent px-6 py-3 text-sm font-semibold" style="color: var(--text-secondary);" onclick="switchDtrTab('tab-detailed')">
+                        Detailed DTR
+                    </div>
+                </div>
+
+                <!-- TAB 1: DTR EXCEPTION LIST -->
+                <div id="tab-exception" class="dtr-content active">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#1f212b] border-b border-[var(--border-color)]">
+                                <tr>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Employee</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Date</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Time In/Out</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Discrepancy</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Status</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[var(--border-color)]">
+                                <tr class="hover:bg-white/5">
+                                    <td class="p-4 font-medium text-white">Micko Lagundino <span class="text-xs text-[var(--text-secondary)] block">Finance</span></td>
+                                    <td class="p-4">Sep 07, 2026</td>
+                                    <td class="p-4">8:09 AM - 9:13 PM</td>
+                                    <td class="p-4 text-[var(--accent-orange)]"><i class="fas fa-clock mr-1"></i> Unapproved Overtime <br><span class="text-xs text-[var(--text-secondary)]">193m OT beyond schedule</span></td>
+                                    <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                    <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="openResolveModal('Micko Lagundino', 'Unapproved Overtime', 'Sep 07, 2026')">Resolve</button></td>
+                                </tr>
+                                <tr class="hover:bg-white/5">
+                                    <td class="p-4 font-medium text-white">Limbert Lincoln Juaño <span class="text-xs text-[var(--text-secondary)] block">Sales</span></td>
+                                    <td class="p-4">Sep 14, 2026</td>
+                                    <td class="p-4">7:57 AM - --</td>
+                                    <td class="p-4 text-[var(--accent-orange)]"><i class="fas fa-sign-out-alt mr-1"></i> Missing Time Out <br><span class="text-xs text-[var(--text-secondary)]">Missing punch-out</span></td>
+                                    <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                    <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="openResolveModal('Limbert Lincoln Juaño', 'Missing Time Out', 'Sep 14, 2026')">Resolve</button></td>
+                                </tr>
+                                <tr class="hover:bg-white/5">
+                                    <td class="p-4 font-medium text-white">Nikko Octavo <span class="text-xs text-[var(--text-secondary)] block">Marketing</span></td>
+                                    <td class="p-4">Sep 08, 2026</td>
+                                    <td class="p-4 text-center font-bold text-white">-- : --</td>
+                                    <td class="p-4 text-[var(--accent-red)]"><i class="fas fa-user-times mr-1"></i> Unauthorized Leave <br><span class="text-xs text-[var(--text-secondary)]">No attendance records</span></td>
+                                    <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                    <td class="p-4 text-right"><button class="btn text-sm py-1.5" onclick="openResolveModal('Nikko Octavo', 'Unauthorized Leave', 'Sep 08, 2026')">Resolve</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: DETAILED DTR -->
+                <div id="tab-detailed" class="dtr-content">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-x-auto shadow-lg">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-[#1f212b] border-b border-[var(--border-color)]">
+                                <tr>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">ID</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Employee Name</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Department</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Regular</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Late</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Undertime</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Overtime</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Night Diff</th>
+                                    <th class="p-4 font-bold text-[var(--accent-blue)] uppercase text-xs text-right">Total Hours</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-center">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[var(--border-color)]">
+                                
+                                <!-- =============================================== -->
+                                <!-- 0001: MICKO LAGUNDINO -->
+                                <!-- =============================================== -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleRow('child-0001', 'icon-0001')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0001</td>
+                                    <td class="p-4 font-medium text-white">Micko Lagundino</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Finance</td>
+                                    <td class="p-4 text-right">88</td>
+                                    <td class="p-4 text-right text-[var(--accent-orange)]">96m</td>
+                                    <td class="p-4 text-right">0m</td>
+                                    <td class="p-4 text-right text-[var(--accent-green)]">491m</td>
+                                    <td class="p-4 text-right">84m</td>
+                                    <td class="p-4 text-right font-bold text-white text-base">99.35</td>
+                                    <td class="p-4 text-center"><i id="icon-0001" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-0001" class="hidden bg-[#181a20]">
+                                    <td colspan="10" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <h3 class="text-[var(--accent-red)] font-bold mb-3 uppercase tracking-wider text-xs flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Daily Breakdown: Sep 1 - Sep 15</h3>
+                                            <table class="w-full text-xs text-left border border-[var(--border-color)] rounded overflow-hidden">
+                                                <thead class="bg-[var(--bg-main)] text-[var(--text-secondary)] uppercase border-b border-[var(--border-color)]">
+                                                    <tr><th class="py-2 px-3">Date</th><th class="py-2 px-3">Day</th><th class="py-2 px-3">Type</th><th class="py-2 px-3">Sched In</th><th class="py-2 px-3">Sched Out</th><th class="py-2 px-3">Break</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual In</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual Out</th><th class="py-2 px-3 text-[var(--accent-orange)]">Late</th><th class="py-2 px-3 text-[var(--accent-orange)]">UT</th><th class="py-2 px-3 text-[var(--accent-green)]">OT</th><th class="py-2 px-3">ND</th><th class="py-2 px-3">Attendance</th><th class="py-2 px-3">Audit</th></tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-[var(--border-color)]">
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/15/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:13 AM</td><td class="py-2 px-3 text-white">5:17 PM</td><td class="py-2 px-3">13m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">17m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/14/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:02 AM</td><td class="py-2 px-3 text-white">7:02 PM</td><td class="py-2 px-3">2m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">62m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/13/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/12/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/11/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:22 AM</td><td class="py-2 px-3 text-white">6:33 PM</td><td class="py-2 px-3">22m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">33m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/10/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:39 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/9/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:07 AM</td><td class="py-2 px-3 text-white">6:53 PM</td><td class="py-2 px-3">7m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">53m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/8/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:16 AM</td><td class="py-2 px-3 text-white">5:39 PM</td><td class="py-2 px-3">16m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-red-900/10 border-l-2 border-l-[var(--accent-red)]"><td class="py-2 px-3 font-semibold">9/7/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:09 AM</td><td class="py-2 px-3 text-white">9:13 PM</td><td class="py-2 px-3">9m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--accent-red)] font-bold">193m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-[var(--accent-red)] text-white px-2 py-0.5 rounded-full text-[10px] font-bold">Flagged</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/6/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/5/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/4/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:08 AM</td><td class="py-2 px-3 text-white">5:31 PM</td><td class="py-2 px-3">8m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/3/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:45 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--accent-orange)] font-bold">15m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/2/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:04 AM</td><td class="py-2 px-3 text-white">7:03 PM</td><td class="py-2 px-3">4m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">63m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/1/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:24 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">24m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 0002: LIMBERT LINCOLN JUE -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleRow('child-0002', 'icon-0002')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0002</td>
+                                    <td class="p-4 font-medium text-white">Limbert Lincoln Juaño</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Sales</td>
+                                    <td class="p-4 text-right">88</td>
+                                    <td class="p-4 text-right text-[var(--accent-orange)]">26m</td>
+                                    <td class="p-4 text-right">0m</td>
+                                    <td class="p-4 text-right text-[var(--accent-green)]">335m</td>
+                                    <td class="p-4 text-right">0m</td>
+                                    <td class="p-4 text-right font-bold text-white text-base">92.32</td>
+                                    <td class="p-4 text-center"><i id="icon-0002" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-0002" class="hidden bg-[#181a20]">
+                                    <td colspan="10" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <table class="w-full text-xs text-left border border-[var(--border-color)] rounded overflow-hidden">
+                                                <thead class="bg-[var(--bg-main)] text-[var(--text-secondary)] uppercase border-b border-[var(--border-color)]">
+                                                    <tr><th class="py-2 px-3">Date</th><th class="py-2 px-3">Day</th><th class="py-2 px-3">Type</th><th class="py-2 px-3">Sched In</th><th class="py-2 px-3">Sched Out</th><th class="py-2 px-3">Break</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual In</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual Out</th><th class="py-2 px-3 text-[var(--accent-orange)]">Late</th><th class="py-2 px-3 text-[var(--accent-orange)]">UT</th><th class="py-2 px-3 text-[var(--accent-green)]">OT</th><th class="py-2 px-3">ND</th><th class="py-2 px-3">Attendance</th><th class="py-2 px-3">Audit</th></tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-[var(--border-color)]">
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/15/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:12 AM</td><td class="py-2 px-3 text-white">5:17 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-red-900/10 border-l-2 border-l-[var(--accent-red)]"><td class="py-2 px-3 font-semibold">9/14/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:57 AM</td><td class="py-2 px-3 text-white text-center">--</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-[var(--accent-red)] text-white px-2 py-0.5 rounded-full text-[10px] font-bold">Flagged</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/13/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/12/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/11/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:22 AM</td><td class="py-2 px-3 text-white">6:33 PM</td><td class="py-2 px-3">22m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">33m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/10/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:39 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/9/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">6:56 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">56m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/8/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:59 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/7/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">7:09 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">69m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/6/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/5/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/4/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:08 AM</td><td class="py-2 px-3 text-white">5:31 PM</td><td class="py-2 px-3">8m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/3/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:45 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--accent-orange)] font-bold">15m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/2/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:04 AM</td><td class="py-2 px-3 text-white">7:03 PM</td><td class="py-2 px-3">4m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">63m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/1/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:24 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">24m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 0003: NIKKO OCTAVO (UNAUTHORIZED LEAVE) -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleRow('child-0003', 'icon-0003')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0003</td>
+                                    <td class="p-4 font-medium text-white">Nikko Octavo</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Marketing</td>
+                                    <td class="p-4 text-right">80</td>
+                                    <td class="p-4 text-right text-[var(--accent-orange)]">54m</td>
+                                    <td class="p-4 text-right">0m</td>
+                                    <td class="p-4 text-right text-[var(--accent-green)]">323m</td>
+                                    <td class="p-4 text-right">0m</td>
+                                    <td class="p-4 text-right font-bold text-white text-base">84.48</td>
+                                    <td class="p-4 text-center"><i id="icon-0003" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-0003" class="hidden bg-[#181a20]">
+                                    <td colspan="10" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <table class="w-full text-xs text-left border border-[var(--border-color)] rounded overflow-hidden">
+                                                <thead class="bg-[var(--bg-main)] text-[var(--text-secondary)] uppercase border-b border-[var(--border-color)]">
+                                                    <tr><th class="py-2 px-3">Date</th><th class="py-2 px-3">Day</th><th class="py-2 px-3">Type</th><th class="py-2 px-3">Sched In</th><th class="py-2 px-3">Sched Out</th><th class="py-2 px-3">Break</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual In</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual Out</th><th class="py-2 px-3 text-[var(--accent-orange)]">Late</th><th class="py-2 px-3 text-[var(--accent-orange)]">UT</th><th class="py-2 px-3 text-[var(--accent-green)]">OT</th><th class="py-2 px-3">ND</th><th class="py-2 px-3">Attendance</th><th class="py-2 px-3">Audit</th></tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-[var(--border-color)]">
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/15/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:07 AM</td><td class="py-2 px-3 text-white">5:17 PM</td><td class="py-2 px-3">7m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/14/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:52 AM</td><td class="py-2 px-3 text-white">5:59 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/13/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/12/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/11/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:22 AM</td><td class="py-2 px-3 text-white">6:33 PM</td><td class="py-2 px-3">22m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">33m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/10/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:39 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/9/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:07 AM</td><td class="py-2 px-3 text-white">6:53 PM</td><td class="py-2 px-3">7m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">53m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <!-- UNAUTHORIZED LEAVE -->
+                                                    <tr class="bg-red-900/10 border-l-2 border-l-[var(--accent-red)]"><td class="py-2 px-3 font-semibold">9/8/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 font-bold text-white text-center">-- : --</td><td class="py-2 px-3 font-bold text-white text-center">-- : --</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full text-[10px]">Absent</span></td><td class="py-2 px-3"><span class="bg-[var(--accent-red)] text-white px-2 py-0.5 rounded-full text-[10px] font-bold">Flagged</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/7/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:09 AM</td><td class="py-2 px-3 text-white">8:09 PM</td><td class="py-2 px-3">9m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">129m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/6/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/5/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/4/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:08 AM</td><td class="py-2 px-3 text-white">5:31 PM</td><td class="py-2 px-3">8m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/3/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:45 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--accent-orange)] font-bold">15m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/2/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:04 AM</td><td class="py-2 px-3 text-white">7:03 PM</td><td class="py-2 px-3">4m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">63m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/1/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:24 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">24m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 0004: RALF KEVIN PANO -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleRow('child-0004', 'icon-0004')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0004</td>
+                                    <td class="p-4 font-medium text-white">Ralf Kevin Pano</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Sales</td>
+                                    <td class="p-4 text-right">88</td>
+                                    <td class="p-4 text-right text-[var(--accent-orange)]">46m</td>
+                                    <td class="p-4 text-right text-[var(--accent-orange)]">15m</td>
+                                    <td class="p-4 text-right text-[var(--accent-green)]">245m</td>
+                                    <td class="p-4 text-right">0m</td>
+                                    <td class="p-4 text-right font-bold text-white text-base">91.07</td>
+                                    <td class="p-4 text-center"><i id="icon-0004" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-0004" class="hidden bg-[#181a20]">
+                                    <td colspan="10" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <table class="w-full text-xs text-left border border-[var(--border-color)] rounded overflow-hidden">
+                                                <thead class="bg-[var(--bg-main)] text-[var(--text-secondary)] uppercase border-b border-[var(--border-color)]">
+                                                    <tr><th class="py-2 px-3">Date</th><th class="py-2 px-3">Day</th><th class="py-2 px-3">Type</th><th class="py-2 px-3">Sched In</th><th class="py-2 px-3">Sched Out</th><th class="py-2 px-3">Break</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual In</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual Out</th><th class="py-2 px-3 text-[var(--accent-orange)]">Late</th><th class="py-2 px-3 text-[var(--accent-orange)]">UT</th><th class="py-2 px-3 text-[var(--accent-green)]">OT</th><th class="py-2 px-3">ND</th><th class="py-2 px-3">Attendance</th><th class="py-2 px-3">Audit</th></tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-[var(--border-color)]">
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/15/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">5:17 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/14/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:57 AM</td><td class="py-2 px-3 text-white">5:59 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/13/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/12/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/11/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:22 AM</td><td class="py-2 px-3 text-white">6:33 PM</td><td class="py-2 px-3">22m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">33m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/10/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:39 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/9/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">6:56 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">56m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/8/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:59 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/7/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">7:09 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">69m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/6/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/5/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/4/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:08 AM</td><td class="py-2 px-3 text-white">5:31 PM</td><td class="py-2 px-3">8m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/3/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:45 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--accent-orange)] font-bold">15m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/2/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:04 AM</td><td class="py-2 px-3 text-white">7:03 PM</td><td class="py-2 px-3">4m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">63m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/1/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:24 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">24m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- 0005: SETH WILLIAM MORES -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleRow('child-0005', 'icon-0005')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0005</td>
+                                    <td class="p-4 font-medium text-white">Seth William Mores</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Sales</td>
+                                    <td class="p-4 text-right">88</td>
+                                    <td class="p-4 text-right text-[var(--accent-orange)]">50m</td>
+                                    <td class="p-4 text-right text-[var(--accent-orange)]">10m</td>
+                                    <td class="p-4 text-right text-[var(--accent-green)]">410m</td>
+                                    <td class="p-4 text-right">0m</td>
+                                    <td class="p-4 text-right font-bold text-white text-base">93.83</td>
+                                    <td class="p-4 text-center"><i id="icon-0005" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-0005" class="hidden bg-[#181a20]">
+                                    <td colspan="10" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <table class="w-full text-xs text-left border border-[var(--border-color)] rounded overflow-hidden">
+                                                <thead class="bg-[var(--bg-main)] text-[var(--text-secondary)] uppercase border-b border-[var(--border-color)]">
+                                                    <tr><th class="py-2 px-3">Date</th><th class="py-2 px-3">Day</th><th class="py-2 px-3">Type</th><th class="py-2 px-3">Sched In</th><th class="py-2 px-3">Sched Out</th><th class="py-2 px-3">Break</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual In</th><th class="py-2 px-3 text-[var(--accent-blue)]">Actual Out</th><th class="py-2 px-3 text-[var(--accent-orange)]">Late</th><th class="py-2 px-3 text-[var(--accent-orange)]">UT</th><th class="py-2 px-3 text-[var(--accent-green)]">OT</th><th class="py-2 px-3">ND</th><th class="py-2 px-3">Attendance</th><th class="py-2 px-3">Audit</th></tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-[var(--border-color)]">
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/15/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">5:17 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/14/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:57 AM</td><td class="py-2 px-3 text-white">4:50 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--accent-orange)] font-bold">10m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/13/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/12/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/11/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:22 AM</td><td class="py-2 px-3 text-white">6:33 PM</td><td class="py-2 px-3">22m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">33m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/10/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:39 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/9/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">6:56 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">56m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/8/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:06 AM</td><td class="py-2 px-3 text-white">5:59 PM</td><td class="py-2 px-3">6m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/7/2026</td><td class="py-2 px-3">Mon</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:00 AM</td><td class="py-2 px-3 text-white">7:09 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">69m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/6/2026</td><td class="py-2 px-3">Sun</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="bg-black/20 opacity-60 text-[var(--text-secondary)]"><td class="py-2 px-3">9/5/2026</td><td class="py-2 px-3">Sat</td><td class="py-2 px-3">Rest day</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3 text-center">--</td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td><td class="py-2 px-3"><span class="bg-gray-700/30 px-2 py-0.5 rounded-full text-[10px]">--</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/4/2026</td><td class="py-2 px-3">Fri</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:08 AM</td><td class="py-2 px-3 text-white">5:31 PM</td><td class="py-2 px-3">8m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/3/2026</td><td class="py-2 px-3">Thu</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:45 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--accent-orange)] font-bold">15m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/2/2026</td><td class="py-2 px-3">Wed</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">8:04 AM</td><td class="py-2 px-3 text-white">7:03 PM</td><td class="py-2 px-3">4m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">63m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                    <tr class="hover:bg-white/5"><td class="py-2 px-3">9/1/2026</td><td class="py-2 px-3">Tue</td><td class="py-2 px-3">Regular</td><td class="py-2 px-3">8:00 AM</td><td class="py-2 px-3">5:00 PM</td><td class="py-2 px-3">60m</td><td class="py-2 px-3 text-white">7:58 AM</td><td class="py-2 px-3 text-white">6:24 PM</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3">24m</td><td class="py-2 px-3 text-[var(--text-secondary)]">On time</td><td class="py-2 px-3"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full text-[10px]">Present</span></td><td class="py-2 px-3"><span class="bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded-full text-[10px]">Cleared</span></td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+<!-- ==========================================
+                 PAGE 4: THE PAYROLL COMPUTATION VIEW 
+                 ========================================== -->
+            <div id="view-payroll" class="page-view">
+                
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white mb-1">Payroll Computation</h1>
+                    <p class="text-[var(--text-secondary)] text-sm mb-5">Review payroll calculations, audit variances, and resolve disbursement errors.</p>
+
+                    <div class="flex flex-wrap gap-4 items-center justify-between bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)]">
+                        <div class="flex gap-4">
+                            <div class="flex flex-col">
+                                <label class="text-xs uppercase text-[var(--text-secondary)] font-bold mb-1">Cutoff Period</label>
+                                <!-- ADDED HOOK: global-cutoff-select -->
+                                <select class="global-cutoff-select bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                                    <option>Sep 01, 2026 - Sep 15, 2026</option>
+                                    <option>Aug 16, 2026 - Aug 31, 2026</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs uppercase text-[var(--text-secondary)] font-bold mb-1">Department</label>
+                                <select class="bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                                    <option>All Departments</option>
+                                    <option>Finance</option>
+                                    <option>Sales</option>
+                                    <option>Marketing</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="relative w-64">
+                            <i class="fas fa-search absolute left-3 top-3 text-[var(--text-secondary)] text-sm"></i>
+                            <input type="text" placeholder="Search employee..." class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded px-3 py-2 pl-9 text-sm focus:outline-none focus:border-[var(--accent-blue)]">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex border-b border-[var(--border-color)] mb-6">
+                    <div class="comp-tab active border-[var(--accent-blue)] px-6 py-3 text-sm font-semibold flex items-center gap-2" style="color: var(--accent-blue);" onclick="switchCompTab('tab-comp-exception')">
+                        COMP Exception List 
+                        <span class="bg-[var(--accent-red)] text-white text-[10px] px-2 py-0.5 rounded-full">2 Pending</span>
+                    </div>
+                    <div class="comp-tab border-transparent px-6 py-3 text-sm font-semibold" style="color: var(--text-secondary);" onclick="switchCompTab('tab-comp-detailed')">
+                        Detailed Computation
+                    </div>
+                </div>
+
+                <!-- TAB 1: COMP EXCEPTION LIST -->
+                <div id="tab-comp-exception" class="comp-content active">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-[#1f212b] border-b border-[var(--border-color)]">
+                                <tr>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Employee</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Net Pay</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Variance</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Discrepancy</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Status</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[var(--border-color)]">
+                                <!-- Scenario A: High Net Pay Variance -->
+                                <tr class="hover:bg-white/5">
+                                    <td class="p-4 font-medium text-white">Seth William Mores <span class="text-xs text-[var(--text-secondary)] block">Sales</span></td>
+                                    <td class="p-4 font-bold text-[var(--accent-green)]">₱ 9,195.57</td>
+                                    <td class="p-4 text-[var(--accent-orange)]">+28.2%</td>
+                                    <td class="p-4 text-yellow-500"><i class="fas fa-exclamation-triangle mr-1"></i> High Net Pay Variance <br><span class="text-xs text-[var(--text-secondary)]">Exceeds 20% threshold</span></td>
+                                    <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                    <td class="p-4 text-right">
+                                        <!-- Routes to Detailed Computation and opens Seth's payslip breakdown -->
+                                    <button class="btn text-sm py-1.5" onclick="openPayslipModal('Seth William Mores')">Resolve</button>
+                                    </td>
+                                </tr>
+                                <!-- Scenario B: Missing Bank Details -->
+                                <tr class="hover:bg-white/5">
+                                    <td class="p-4 font-medium text-white">Ralf Kevin Pano <span class="text-xs text-[var(--text-secondary)] block">Sales</span></td>
+                                    <td class="p-4 font-bold text-[var(--accent-green)]">₱ 8,785.39</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">--</td>
+                                    <td class="p-4 text-orange-500"><i class="fas fa-university mr-1"></i> Missing Bank Details <br><span class="text-xs text-[var(--text-secondary)]">Invalid account routing number</span></td>
+                                    <td class="p-4"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                    <td class="p-4 text-right">
+                                        <!-- Routes directly to the Payroll Configuration module -->
+                                        <button class="btn text-sm py-1.5" onclick="navigateTo('view-maintenance')">Resolve</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: DETAILED COMPUTATION -->
+                <div id="tab-comp-detailed" class="comp-content">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-x-auto shadow-lg mb-6">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-[#1f212b] border-b border-[var(--border-color)]">
+                                <tr>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">ID</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Employee Name</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs">Department</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-right">Gross</th>
+                                    <th class="p-4 font-semibold text-[var(--accent-red)] uppercase text-xs text-right">Deductions</th>
+                                    <th class="p-4 font-bold text-[var(--accent-green)] uppercase text-xs text-right">Net Pay</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-center">Status</th>
+                                    <th class="p-4 font-semibold text-[var(--text-secondary)] uppercase text-xs text-center">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[var(--border-color)]">
+                                
+                                <!-- ROW 1: Micko -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleCompRow('child-comp-0001', 'icon-comp-0001')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0001</td>
+                                    <td class="p-4 font-medium text-white">Micko Lagundino</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Finance</td>
+                                    <td class="p-4 text-right">₱ 14,515.38</td>
+                                    <td class="p-4 text-right text-[var(--accent-red)]">₱ 3,150.00</td>
+                                    <td class="p-4 text-right font-bold text-[var(--accent-green)] text-base">₱ 11,365.38</td>
+                                    <td class="p-4 text-center"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-xs font-bold border border-emerald-500/30">🟢 Cleared</span></td>
+                                    <td class="p-4 text-center"><i id="icon-comp-0001" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-comp-0001" class="hidden bg-[#181a20]">
+                                    <td colspan="8" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <h3 class="text-[var(--accent-blue)] font-bold mb-4 uppercase tracking-wider text-xs flex items-center gap-2"><i class="fas fa-calculator"></i> Computation Breakdown</h3>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-green)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Earnings</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Basic Pay</span><span class="text-white">₱ 13,000.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Overtime Pay</span><span class="text-white">₱ 1,600.00</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Night Diff Pay</span><span class="text-white">₱ 100.00</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-orange)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Attendance Deductions</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Lates <span class="text-xs opacity-70">(96 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 184.62</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Undertime <span class="text-xs opacity-70">(0 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 0.00</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--text-secondary)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Statutory & Tax</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">SSS</span><span class="text-gray-300">- ₱ 1,200.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">PhilHealth</span><span class="text-gray-300">- ₱ 400.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Pag-IBIG</span><span class="text-gray-300">- ₱ 100.00</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Withholding Tax</span><span class="text-gray-300">- ₱ 1,450.00</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- ROW 2: Limbert -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleCompRow('child-comp-0002', 'icon-comp-0002')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0002</td>
+                                    <td class="p-4 font-medium text-white">Limbert Lincoln Juaño</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Sales</td>
+                                    <td class="p-4 text-right">₱ 11,818.23</td>
+                                    <td class="p-4 text-right text-[var(--accent-red)]">₱ 2,450.00</td>
+                                    <td class="p-4 text-right font-bold text-[var(--accent-green)] text-base">₱ 9,368.23</td>
+                                    <td class="p-4 text-center"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-xs font-bold border border-emerald-500/30">🟢 Cleared</span></td>
+                                    <td class="p-4 text-center"><i id="icon-comp-0002" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-comp-0002" class="hidden bg-[#181a20]">
+                                    <td colspan="8" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <h3 class="text-[var(--accent-blue)] font-bold mb-4 uppercase tracking-wider text-xs flex items-center gap-2"><i class="fas fa-calculator"></i> Computation Breakdown</h3>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-green)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Earnings</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Basic Pay</span><span class="text-white">₱ 11,000.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Overtime Pay</span><span class="text-white">₱ 868.23</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Night Diff Pay</span><span class="text-white">₱ 0.00</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-orange)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Attendance Deductions</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Lates <span class="text-xs opacity-70">(26 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 50.00</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Undertime <span class="text-xs opacity-70">(0 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 0.00</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--text-secondary)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Statutory & Tax</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">SSS</span><span class="text-gray-300">- ₱ 1,100.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">PhilHealth</span><span class="text-gray-300">- ₱ 350.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Pag-IBIG</span><span class="text-gray-300">- ₱ 100.00</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Withholding Tax</span><span class="text-gray-300">- ₱ 900.00</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- ROW 3: Nikko -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleCompRow('child-comp-0003', 'icon-comp-0003')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0003</td>
+                                    <td class="p-4 font-medium text-white">Nikko Octavo</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Marketing</td>
+                                    <td class="p-4 text-right">₱ 12,901.51</td>
+                                    <td class="p-4 text-right text-[var(--accent-red)]">₱ 2,650.00</td>
+                                    <td class="p-4 text-right font-bold text-[var(--accent-green)] text-base">₱ 10,251.51</td>
+                                    <td class="p-4 text-center"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-xs font-bold border border-emerald-500/30">🟢 Cleared</span></td>
+                                    <td class="p-4 text-center"><i id="icon-comp-0003" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-comp-0003" class="hidden bg-[#181a20]">
+                                    <td colspan="8" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <h3 class="text-[var(--accent-blue)] font-bold mb-4 uppercase tracking-wider text-xs flex items-center gap-2"><i class="fas fa-calculator"></i> Computation Breakdown</h3>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-green)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Earnings</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Basic Pay</span><span class="text-white">₱ 12,000.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Overtime Pay</span><span class="text-white">₱ 1,005.36</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Night Diff Pay</span><span class="text-white">₱ 0.00</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-orange)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Attendance Deductions</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Lates <span class="text-xs opacity-70">(54 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 103.85</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Undertime <span class="text-xs opacity-70">(0 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 0.00</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--text-secondary)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Statutory & Tax</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">SSS</span><span class="text-gray-300">- ₱ 1,150.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">PhilHealth</span><span class="text-gray-300">- ₱ 350.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Pag-IBIG</span><span class="text-gray-300">- ₱ 100.00</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Withholding Tax</span><span class="text-gray-300">- ₱ 1,050.00</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- ROW 4: Ralf -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleCompRow('child-comp-0004', 'icon-comp-0004')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0004</td>
+                                    <td class="p-4 font-medium text-white">Ralf Kevin Pano</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Sales</td>
+                                    <td class="p-4 text-right">₱ 10,935.39</td>
+                                    <td class="p-4 text-right text-[var(--accent-red)]">₱ 2,150.00</td>
+                                    <td class="p-4 text-right font-bold text-[var(--accent-green)] text-base">₱ 8,785.39</td>
+                                    <td class="p-4 text-center"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                    <td class="p-4 text-center"><i id="icon-comp-0004" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-comp-0004" class="hidden bg-[#181a20]">
+                                    <td colspan="8" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <h3 class="text-[var(--accent-blue)] font-bold mb-4 uppercase tracking-wider text-xs flex items-center gap-2"><i class="fas fa-calculator"></i> Computation Breakdown</h3>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-green)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Earnings</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Basic Pay</span><span class="text-white">₱ 10,500.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Overtime Pay</span><span class="text-white">₱ 553.33</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Night Diff Pay</span><span class="text-white">₱ 0.00</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-orange)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Attendance Deductions</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Lates <span class="text-xs opacity-70">(46 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 89.62</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Undertime <span class="text-xs opacity-70">(15 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 28.32</span></div>
+                                                </div>
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--text-secondary)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Statutory & Tax</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">SSS</span><span class="text-gray-300">- ₱ 1,050.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">PhilHealth</span><span class="text-gray-300">- ₱ 350.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Pag-IBIG</span><span class="text-gray-300">- ₱ 100.00</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Withholding Tax</span><span class="text-gray-300">- ₱ 650.00</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- ROW 5: Seth Mores (The Template) -->
+                                <tr class="hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleCompRow('child-comp-0005', 'icon-comp-0005')">
+                                    <td class="p-4 text-[var(--text-secondary)]">0005</td>
+                                    <td class="p-4 font-medium text-white">Seth William Mores</td>
+                                    <td class="p-4 text-[var(--text-secondary)]">Sales</td>
+                                    <td class="p-4 text-right">₱ 11,345.57</td>
+                                    <td class="p-4 text-right text-[var(--accent-red)]">₱ 2,150.00</td>
+                                    <td class="p-4 text-right font-bold text-[var(--accent-green)] text-base">₱ 9,195.57</td>
+                                    <td class="p-4 text-center"><span class="bg-red-500/20 text-red-400 px-2 py-1 rounded-full text-xs font-bold border border-red-500/30">🔴 Flagged</span></td>
+                                    <td class="p-4 text-center"><i id="icon-comp-0005" class="fas fa-chevron-down text-[var(--text-secondary)]"></i></td>
+                                </tr>
+                                <tr id="child-comp-0005" class="hidden bg-[#181a20]">
+                                    <td colspan="8" class="p-0">
+                                        <div class="p-6 border-b border-[var(--border-color)]">
+                                            <h3 class="text-[var(--accent-blue)] font-bold mb-4 uppercase tracking-wider text-xs flex items-center gap-2"><i class="fas fa-calculator"></i> Computation Breakdown</h3>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <!-- Column 1: Earnings -->
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-green)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Earnings</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Basic Pay</span><span class="text-white">₱ 10,450.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Overtime Pay</span><span class="text-white">₱ 1,014.32</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Night Diff Pay</span><span class="text-white">₱ 0.00</span></div>
+                                                </div>
+                                                <!-- Column 2: Attendance Deductions -->
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--accent-orange)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Attendance Deductions</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Lates <span class="text-xs opacity-70">(50 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 98.96</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Undertime <span class="text-xs opacity-70">(10 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 19.79</span></div>
+                                                </div>
+                                                <!-- Column 3: Statutory & Tax -->
+                                                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                                                    <h4 class="text-[var(--text-secondary)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Statutory & Tax</h4>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">SSS</span><span class="text-gray-300">- ₱ 1,050.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">PhilHealth</span><span class="text-gray-300">- ₱ 350.00</span></div>
+                                                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Pag-IBIG</span><span class="text-gray-300">- ₱ 100.00</span></div>
+                                                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Withholding Tax</span><span class="text-gray-300">- ₱ 650.00</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                            
+                            <!-- THE NEW GRAND TOTAL FOOTER -->
+                            <tfoot class="bg-[#1f212b] border-t-2 border-[var(--border-color)]">
+                                <tr>
+                                    <td colspan="3" class="p-4 text-right font-bold text-[var(--text-secondary)] uppercase text-xs">Batch Grand Total</td>
+                                    <td class="p-4 text-right font-bold text-white">₱ 61,516.08</td>
+                                    <td class="p-4 text-right font-bold text-[var(--accent-red)]">₱ 12,550.00</td>
+                                    <td class="p-4 text-right font-bold text-[var(--accent-green)] text-lg">₱ 48,966.08</td>
+                                    <td colspan="2" class="p-4"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- NEW SUBMIT BATCH BUTTON -->
+                    <div class="flex justify-between items-center bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl p-6 shadow-inner">
+                        <div>
+                            <h3 class="text-white font-bold text-lg">Finalize Payroll Batch</h3>
+                            <p class="text-[var(--text-secondary)] text-sm">Ensure all exceptions are resolved before submitting the disbursement to finance.</p>
+                        </div>
+                        <button class="btn px-6 py-3 flex items-center gap-2 font-bold transition-all" onclick="openWarningModal()">
+                        <i class="fas fa-check-double"></i> <span>Submit for Approval</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div> <!-- 🛑 CRITICAL FIX: THIS CLOSES THE PAYROLL COMP PAGE -->
+
+            <!-- ==========================================
+                 PAGE 5: THE PAYROLL CONFIGURATION VIEW 
+                 ========================================== -->
+            <div id="view-maintenance" class="page-view">
+                
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white mb-1">Payroll Configuration</h1>
+                    <p class="text-[var(--text-secondary)] text-sm mb-5">Manage tax matrices, statutory tables, employee base rates, and system policies.</p>
+                </div>
+
+                <!-- CONFIG TABS -->
+                <div class="flex border-b border-[var(--border-color)] mb-6 overflow-x-auto whitespace-nowrap">
+                    <div class="config-tab active border-[var(--accent-blue)] px-6 py-3 text-sm font-semibold flex items-center gap-2" style="color: var(--accent-blue);" onclick="switchConfigTab('tab-config-cutoffs')">
+                        <i class="fas fa-calendar-alt"></i> Cutoffs
+                    </div>
+                    <div class="config-tab border-transparent px-6 py-3 text-sm font-semibold flex items-center gap-2" style="color: var(--text-secondary);" onclick="switchConfigTab('tab-config-comp')">
+                        <i class="fas fa-users"></i> Compensation
+                    </div>
+                    <div class="config-tab border-transparent px-6 py-3 text-sm font-semibold flex items-center gap-2" style="color: var(--text-secondary);" onclick="switchConfigTab('tab-config-taxes')">
+                        <i class="fas fa-percent"></i> Taxes
+                    </div>
+                    <div class="config-tab border-transparent px-6 py-3 text-sm font-semibold flex items-center gap-2" style="color: var(--text-secondary);" onclick="switchConfigTab('tab-config-statutory')">
+                        <i class="fas fa-shield-alt"></i> Statutory
+                    </div>
+                    <div class="config-tab border-transparent px-6 py-3 text-sm font-semibold flex items-center gap-2" style="color: var(--text-secondary);" onclick="switchConfigTab('tab-config-policies')">
+                        <i class="fas fa-gavel"></i> Policies
+                    </div>
+                </div>
+
+                <!-- TAB 1: CUTOFFS (INTERACTIVE STATE MANAGEMENT) -->
+                <div id="tab-config-cutoffs" class="config-content active">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        <!-- Create New Cutoff Panel -->
+                        <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-lg p-6">
+                            <h2 class="text-lg font-bold text-white mb-2"><i class="fas fa-plus-circle text-[var(--accent-blue)] mr-2"></i> Global Cutoff Management</h2>
+                            <p class="text-[var(--text-secondary)] text-sm mb-6">Initialize a new payroll period. This action will update the active context across the Dashboard, DTR, and Computation modules.</p>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold mb-2">New Cutoff Period String</label>
+                                    <input type="text" id="new-cutoff-input" class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[var(--accent-blue)] transition-colors" placeholder="e.g., Sep 16, 2026 - Sep 30, 2026">
+                                </div>
+                                <button id="btn-update-cutoff" class="btn w-full py-3 mt-2 flex justify-center items-center gap-2">
+                                    <i class="fas fa-sync-alt"></i> <span>Set as Active Cutoff</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Current Active Cutoffs Info Panel -->
+                        <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl shadow-inner p-6 flex flex-col justify-center items-center text-center">
+                            <div class="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-4">
+                                <i class="fas fa-globe text-2xl text-[var(--accent-blue)]"></i>
+                            </div>
+                            <h3 class="text-white font-bold mb-2">Cross-Module Sync</h3>
+                            <p class="text-[var(--text-secondary)] text-sm max-w-sm">
+                                Adding a new cutoff will dynamically inject `<option>` tags into elements with the `.global-cutoff-select` class without requiring a page reload.
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- TAB 2: COMPENSATION (STATIC MOCKUP) -->
+                <div id="tab-config-comp" class="config-content">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                        <i class="fas fa-tools text-4xl text-[var(--text-secondary)] mb-4 opacity-50"></i>
+                        <h2 class="text-lg font-bold text-white mb-2">Compensation Masterfile</h2>
+                        <p class="text-[var(--text-secondary)] text-sm">System matrix for employee base rates, allowances, and job grades.</p>
+                    </div>
+                </div>
+
+                <!-- TAB 3: TAXES (STATIC MOCKUP) -->
+                <div id="tab-config-taxes" class="config-content">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                        <i class="fas fa-tools text-4xl text-[var(--text-secondary)] mb-4 opacity-50"></i>
+                        <h2 class="text-lg font-bold text-white mb-2">BIR Tax Tables</h2>
+                        <p class="text-[var(--text-secondary)] text-sm">Annualized computation parameters and exemption thresholds.</p>
+                    </div>
+                </div>
+
+                <!-- TAB 4: STATUTORY (STATIC MOCKUP) -->
+                <div id="tab-config-statutory" class="config-content">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                        <i class="fas fa-tools text-4xl text-[var(--text-secondary)] mb-4 opacity-50"></i>
+                        <h2 class="text-lg font-bold text-white mb-2">Statutory Contributions</h2>
+                        <p class="text-[var(--text-secondary)] text-sm">Bracket matrices for SSS, PhilHealth, and Pag-IBIG.</p>
+                    </div>
+                </div>
+
+                <!-- TAB 5: POLICIES (STATIC MOCKUP) -->
+                <div id="tab-config-policies" class="config-content">
+                    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                        <i class="fas fa-tools text-4xl text-[var(--text-secondary)] mb-4 opacity-50"></i>
+                        <h2 class="text-lg font-bold text-white mb-2">System Policies</h2>
+                        <p class="text-[var(--text-secondary)] text-sm">Global multipliers for Overtime (125%), Night Differential (10%), and Holiday pay.</p>
+                    </div>
+                </div>
+
+            </div>
+
+    <!-- 3. RESOLVE EXCEPTION MODAL OVERLAY -->
+    <div id="resolve-modal" class="fixed inset-0 bg-black/70 z-[500] hidden flex items-center justify-center">
+        <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all max-h-[90vh] overflow-y-auto">
+            <h2 id="modal-title" class="text-xl font-bold text-white mb-2">Resolve Exception</h2>
+            <p id="modal-desc" class="text-[var(--text-secondary)] text-sm mb-4">Auditing exception for [Employee].</p>
+
+            <!-- Dynamic Notification Container -->
+            <div id="dynamic-notification" class="mb-5 hidden p-3 rounded-lg border text-sm leading-relaxed"></div>
+
+            <form id="resolve-form" class="space-y-4">
+                
+                <!-- Resolution Option Radios -->
+                <div class="space-y-3">
+                    <label class="block cursor-pointer bg-[var(--bg-main)] border border-[var(--border-color)] hover:border-[var(--accent-blue)] p-3 rounded-lg transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="radio" name="resolution" value="notify" class="w-4 h-4 text-[var(--accent-blue)] bg-gray-800 border-gray-600 focus:ring-[var(--accent-blue)]">
+                            <div>
+                                <span class="block text-sm font-semibold text-white">Notify Employee</span>
+                                <span class="block text-xs text-[var(--text-secondary)] mt-0.5">Send required action notice with related company policy attached.</span>
+                            </div>
+                        </div>
+                    </label>
+
+                    <label class="block cursor-pointer bg-[var(--bg-main)] border border-[var(--border-color)] hover:border-[var(--accent-blue)] p-3 rounded-lg transition-colors">
+                        <div class="flex items-center gap-3">
+                            <input type="radio" name="resolution" value="approve" class="w-4 h-4 text-[var(--accent-blue)] bg-gray-800 border-gray-600 focus:ring-[var(--accent-blue)]">
+                            <div>
+                                <span class="block text-sm font-semibold text-white">Manual Override</span>
+                                <span class="block text-xs text-[var(--text-secondary)] mt-0.5">Force system to approve and clear exception.</span>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Hidden Manual Override Fields -->
+                <div id="manual-override-fields" class="hidden space-y-4 pt-4 border-t border-[var(--border-color)] mt-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        
+                        <!-- DYNAMIC FIELD 1: TIME PICKER (For OT/Missing Timeout) -->
+                        <div id="resolve-time-container">
+                            <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold mb-2">Adjusted Time <span class="text-[var(--accent-red)]">*</span></label>
+                            <input type="time" id="resolve-time" class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent-blue)] transition-colors cursor-pointer" style="color-scheme: dark;">
+                        </div>
+
+                        <!-- DYNAMIC FIELD 2: LEAVE TYPE DROPDOWN (For Unauthorized Leave) -->
+                        <div id="resolve-leave-type-container" class="hidden">
+                            <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold mb-2">Leave Type <span class="text-[var(--accent-red)]">*</span></label>
+                            <select id="resolve-leave-type" class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent-blue)] transition-colors cursor-pointer">
+                                <option value="" disabled selected>Select Leave</option>
+                                <option value="sl">Sick Leave</option>
+                                <option value="vl">Vacation Leave</option>
+                                <option value="ul">Unpaid Leave</option>
+                                <option value="ob">Official Business</option>
+                            </select>
+                        </div>
+
+                        <!-- ATTACH DOCS (Always shows on override) -->
+                        <div>
+                            <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold mb-2">Supporting Docs</label>
+                            <button type="button" class="w-full bg-[var(--bg-main)] hover:bg-white/5 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] border-dashed rounded-lg px-3 py-2 text-sm transition-colors flex items-center justify-center gap-2" onclick="document.getElementById('file-upload').click()">
+                                <i class="fas fa-paperclip"></i> Attach File
+                            </button>
+                            <input type="file" id="file-upload" class="hidden">
+                        </div>
+                    </div>
+                    
+                    <!-- REMARKS (Always shows on override) -->
+                    <div>
+                        <label class="block text-xs uppercase text-[var(--text-secondary)] font-bold mb-2">Remarks / Justification <span class="text-[var(--accent-red)]">*</span></label>
+                        <textarea id="resolve-remarks" rows="2" class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent-blue)] transition-colors" placeholder="e.g., Approved by Dept Head via email..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-[var(--border-color)]">
+                    <button type="button" class="px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-white transition-colors" onclick="closeResolveModal()">Cancel</button>
+                    <!-- Button disabled by default -->
+                    <button type="submit" id="btn-send-notification" class="btn text-sm opacity-50 cursor-not-allowed" disabled>Submit Resolution</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. PAYSLIP AUDIT MODAL OVERLAY -->
+    <div id="payslip-modal" class="fixed inset-0 bg-black/70 z-[500] hidden flex items-center justify-center">
+        <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-2xl w-full max-w-4xl p-6 transform transition-all">
+            <div class="flex justify-between items-center mb-6 border-b border-[var(--border-color)] pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Computation Audit</h2>
+                    <p id="payslip-modal-desc" class="text-[var(--text-secondary)] text-sm mt-1">Reviewing computation variance for Seth William Mores</p>
+                </div>
+                <button onclick="closePayslipModal()" class="text-[var(--text-secondary)] hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- The Computation Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Column 1: Earnings -->
+                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                    <h4 class="text-[var(--accent-green)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Earnings</h4>
+                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Basic Pay</span><span class="text-white">₱ 10,450.00</span></div>
+                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Overtime Pay</span><span class="text-white">₱ 1,014.32</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Night Diff Pay</span><span class="text-white">₱ 0.00</span></div>
+                </div>
+                <!-- Column 2: Attendance Deductions -->
+                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                    <h4 class="text-[var(--accent-orange)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Attendance Deductions</h4>
+                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Lates <span class="text-xs opacity-70">(50 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 98.96</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Undertime <span class="text-xs opacity-70">(10 mins)</span></span><span class="text-[var(--accent-red)]">- ₱ 19.79</span></div>
+                </div>
+                <!-- Column 3: Statutory & Tax -->
+                <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded p-4">
+                    <h4 class="text-[var(--text-secondary)] font-bold text-xs uppercase mb-3 border-b border-[var(--border-color)] pb-2">Statutory & Tax</h4>
+                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">SSS</span><span class="text-gray-300">- ₱ 1,050.00</span></div>
+                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">PhilHealth</span><span class="text-gray-300">- ₱ 350.00</span></div>
+                    <div class="flex justify-between text-sm mb-2"><span class="text-[var(--text-secondary)]">Pag-IBIG</span><span class="text-gray-300">- ₱ 100.00</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-[var(--text-secondary)]">Withholding Tax</span><span class="text-gray-300">- ₱ 650.00</span></div>
+                </div>
+            </div>
+
+            <!-- Action Buttons with TOTAL NET PAY ADDED -->
+            <div class="flex justify-between items-center bg-[var(--bg-main)] p-4 rounded-lg border border-[var(--border-color)]">
+                <div class="flex gap-8">
+                    <div>
+                        <span class="block text-xs uppercase text-[var(--text-secondary)] font-bold">Total Net Pay</span>
+                        <span class="text-[var(--accent-green)] font-bold text-lg">₱ 9,195.57</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs uppercase text-[var(--text-secondary)] font-bold">Net Pay Variance</span>
+                        <span class="text-[var(--accent-orange)] font-bold text-lg">+28.2%</span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button class="btn btn-outline text-sm" onclick="closePayslipModal()">Request Timesheet Correction</button>
+                    <button class="btn text-sm" onclick="closePayslipModal()">Approve Legitimate Variance</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. EXCEPTION WARNING MODAL -->
+    <div id="warning-modal" class="fixed inset-0 bg-black/70 z-[500] hidden flex items-center justify-center">
+        <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all text-center">
+            
+            <!-- Alert Icon -->
+            <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-3xl text-[var(--accent-red)]"></i>
+            </div>
+            
+            <!-- Warning Text -->
+            <h2 class="text-xl font-bold text-white mb-2">Submission Blocked</h2>
+            <p class="text-[var(--text-secondary)] text-sm mb-6">There are still <strong>5 unresolved exception items</strong>. You must audit and clear all pending anomalies before routing the batch for approval.</p>
+            
+            <!-- Action Buttons -->
+            <div class="flex justify-center gap-3">
+                <button type="button" class="px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-white transition-colors" onclick="closeWarningModal()">Cancel</button>
+                <button type="button" class="btn text-sm bg-[var(--accent-red)] hover:bg-red-600 border-none px-6 shadow-lg shadow-red-900/20" onclick="routeToExceptions()">Review Exceptions</button>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- THE NERVOUS SYSTEM (JavaScript) -->
+    <script>
+        /* --- 1. AUTO-LOAD DASHBOARD --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            navigateTo('view-dashboard');
+        });
+
+        /* --- 2. SIDEBAR NAVIGATION --- */
+        const navItems = document.querySelectorAll('.nav-item');
+        const headerTitle = document.getElementById('header-title');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                const targetViewId = this.getAttribute('data-target');
+                document.querySelectorAll('.main-content .page-view').forEach(view => {
+                    view.classList.remove('active');
+                });
+                
+                document.getElementById(targetViewId).classList.add('active');
+                headerTitle.innerText = this.innerText.trim().toUpperCase();
+                document.querySelector('.main-content').scrollTop = 0;
+            });
+        });
+
+        function navigateTo(targetId) {
+            const sidebarLink = document.querySelector(`.nav-item[data-target="${targetId}"]`);
+            if (sidebarLink) sidebarLink.click();
+        }
+
+        /* --- 3. INNER DTR TABS --- */
+        function switchDtrTab(tabId) {
+            document.querySelectorAll('.dtr-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-[var(--accent-blue)]');
+                tab.classList.add('border-transparent');
+                tab.style.color = "var(--text-secondary)";
+            });
+            const clickedTab = event.currentTarget;
+            clickedTab.classList.add('active', 'border-[var(--accent-blue)]');
+            clickedTab.classList.remove('border-transparent');
+            clickedTab.style.color = "var(--accent-blue)";
+
+            document.querySelectorAll('.dtr-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function toggleRow(childRowId, iconId) {
+            const childRow = document.getElementById(childRowId);
+            const icon = document.getElementById(iconId);
+            if (childRow.classList.contains('hidden')) {
+                childRow.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up', 'text-[var(--accent-blue)]');
+            } else {
+                childRow.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up', 'text-[var(--accent-blue)]');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        /* --- 4. INNER PAYROLL COMP TABS & ACCORDION --- */
+        function switchCompTab(tabId) {
+            document.querySelectorAll('.comp-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-[var(--accent-blue)]');
+                tab.classList.add('border-transparent');
+                tab.style.color = "var(--text-secondary)";
+            });
+            const clickedTab = event.currentTarget;
+            clickedTab.classList.add('active', 'border-[var(--accent-blue)]');
+            clickedTab.classList.remove('border-transparent');
+            clickedTab.style.color = "var(--accent-blue)";
+
+            document.querySelectorAll('.comp-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function toggleCompRow(childRowId, iconId) {
+            const childRow = document.getElementById(childRowId);
+            const icon = document.getElementById(iconId);
+            if (childRow.classList.contains('hidden')) {
+                childRow.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up', 'text-[var(--accent-blue)]');
+            } else {
+                childRow.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up', 'text-[var(--accent-blue)]');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        /* --- 5. RESOLVE MODAL LOGIC --- */
+        const modal = document.getElementById('resolve-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const dynamicNotification = document.getElementById('dynamic-notification');
+        const manualOverrideFields = document.getElementById('manual-override-fields');
+        const resolveRemarks = document.getElementById('resolve-remarks');
+        
+        // Time & Leave Elements
+        const resolveTime = document.getElementById('resolve-time');
+        const resolveTimeContainer = document.getElementById('resolve-time-container');
+        const resolveLeaveType = document.getElementById('resolve-leave-type');
+        const resolveLeaveTypeContainer = document.getElementById('resolve-leave-type-container');
+        
+        const btnSendNotification = document.getElementById('btn-send-notification');
+        const resolutionRadios = document.querySelectorAll('input[name="resolution"]');
+
+        let currentExceptionType = ''; // Tracks state
+
+        function validateResolveForm() {
+            const selectedOption = document.querySelector('input[name="resolution"]:checked');
+            
+            if (!selectedOption) {
+                btnSendNotification.disabled = true;
+                btnSendNotification.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            if (selectedOption.value === 'notify') {
+                // HIDE manual fields, ENABLE submit
+                manualOverrideFields.classList.add('hidden');
+                btnSendNotification.disabled = false;
+                btnSendNotification.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnSendNotification.innerText = "Send Notification";
+            } else if (selectedOption.value === 'approve') {
+                // SHOW manual fields, DISABLE submit until filled
+                manualOverrideFields.classList.remove('hidden');
+                btnSendNotification.innerText = "Execute Override";
+                
+                const hasRemarks = resolveRemarks.value.trim() !== '';
+                let hasValidInput = false;
+
+                // Check which field is required based on exception type
+                if (currentExceptionType.includes('Unauthorized Leave')) {
+                    hasValidInput = resolveLeaveType.value !== '';
+                } else {
+                    hasValidInput = resolveTime.value.trim() !== '';
+                }
+
+                if (hasRemarks && hasValidInput) {
+                    btnSendNotification.disabled = false;
+                    btnSendNotification.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btnSendNotification.disabled = true;
+                    btnSendNotification.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        // Event Listeners for real-time validation
+        resolutionRadios.forEach(radio => radio.addEventListener('change', validateResolveForm));
+        resolveRemarks.addEventListener('input', validateResolveForm);
+        resolveTime.addEventListener('input', validateResolveForm);
+        resolveLeaveType.addEventListener('change', validateResolveForm);
+
+        function openResolveModal(employeeName, exceptionType) {
+            currentExceptionType = exceptionType; // Save context globally
+            
+            modalDesc.innerHTML = `Resolving <strong>${exceptionType}</strong> for <strong>${employeeName}</strong>.`;
+            
+            // Reset form completely
+            document.getElementById('resolve-form').reset();
+            dynamicNotification.className = "mb-5 p-3 rounded-lg border text-sm leading-relaxed";
+            
+            // Swap inputs dynamically based on Exception
+            if (exceptionType.includes('Unauthorized Leave')) {
+                resolveTimeContainer.classList.add('hidden');
+                resolveLeaveTypeContainer.classList.remove('hidden');
+            } else {
+                resolveTimeContainer.classList.remove('hidden');
+                resolveLeaveTypeContainer.classList.add('hidden');
+            }
+
+            // Inject dynamic SLA wording based on the error
+            if (exceptionType.includes('Unapproved Overtime')) {
+                dynamicNotification.classList.add('bg-blue-500/10', 'border-blue-500/30', 'text-blue-400');
+                dynamicNotification.innerHTML = `<strong>Action Required:</strong> Employees must submit an overtime request and secure supervisor approval no later than 3 days prior to the payroll date. Failure to do so will result in the forfeiture of the OT hours and their removal from the exception list.`;
+                dynamicNotification.style.display = 'block';
+            } else if (exceptionType.includes('Missing Time Out')) {
+                dynamicNotification.classList.add('bg-orange-500/10', 'border-orange-500/30', 'text-orange-400');
+                dynamicNotification.innerHTML = `<strong>Action Required:</strong> Employees must file an IT ticket and secure supervisor approval for missing time-out hours no later than 3 days prior to the payroll date. Failure to complete this process will result in the missing hours being classified as an absence.`;
+                dynamicNotification.style.display = 'block';
+            } else if (exceptionType.includes('Unauthorized Leave')) {
+                dynamicNotification.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-400');
+                dynamicNotification.innerHTML = `<strong>Action Required:</strong> Employees must submit a leave request and secure supervisor approval no later than 3 days prior to the payroll date. Failure to do so will result in the hours being classified as Leave Without Pay (LWOP).`;
+                dynamicNotification.style.display = 'block';
+            } else {
+                dynamicNotification.style.display = 'none';
+            }
+
+            validateResolveForm(); // Lock button initially
+            modal.classList.remove('hidden');
+        }
+
+        function closeResolveModal() {
+            modal.classList.add('hidden');
+        }
+
+        document.getElementById('resolve-form').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            const originalText = btnSendNotification.innerText;
+            btnSendNotification.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            setTimeout(() => {
+                btnSendNotification.innerHTML = '<i class="fas fa-check-circle"></i> Success!';
+                btnSendNotification.classList.add('bg-[var(--accent-green)]');
+                
+                setTimeout(() => {
+                    closeResolveModal();
+                    btnSendNotification.innerText = originalText;
+                    btnSendNotification.classList.remove('bg-[var(--accent-green)]');
+                }, 800);
+            }, 800);
+        });
+
+        /* --- 6. SMART ROUTING FROM EXCEPTION REPORT --- */
+        function navigateToAndTab(pageTargetId, tabTargetId) {
+            navigateTo(pageTargetId);
+            if (pageTargetId === 'view-dtr') {
+                const targetTabElement = document.querySelector(`.dtr-tab[onclick*="${tabTargetId}"]`);
+                if(targetTabElement) targetTabElement.click();
+            } 
+            else if (pageTargetId === 'view-payroll') {
+                const targetTabElement = document.querySelector(`.comp-tab[onclick*="${tabTargetId}"]`);
+                if(targetTabElement) targetTabElement.click();
+            }
+        }
+
+        /* --- 7. PAYROLL CONFIGURATION STATE MANAGEMENT --- */
+        // Inner tab logic for Config page
+        function switchConfigTab(tabId) {
+            document.querySelectorAll('.config-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-[var(--accent-blue)]');
+                tab.classList.add('border-transparent');
+                tab.style.color = "var(--text-secondary)";
+            });
+            const clickedTab = event.currentTarget;
+            clickedTab.classList.add('active', 'border-[var(--accent-blue)]');
+            clickedTab.classList.remove('border-transparent');
+            clickedTab.style.color = "var(--accent-blue)";
+
+            document.querySelectorAll('.config-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Global State Array for Cutoffs
+        let appCutoffs = ["Sep 01, 2026 - Sep 15, 2026", "Aug 16, 2026 - Aug 31, 2026"];
+
+        // The Reactivity Sync Function
+        const btnUpdateCutoff = document.getElementById('btn-update-cutoff');
+        const newCutoffInput = document.getElementById('new-cutoff-input');
+        
+        btnUpdateCutoff.addEventListener('click', function() {
+            const newCutoffVal = newCutoffInput.value.trim();
+            
+            if (newCutoffVal !== "") {
+                // 1. Update State
+                appCutoffs.unshift(newCutoffVal); // Add to beginning of array
+                
+                // 2. Sync DOM (Select Dropdowns)
+                const globalSelects = document.querySelectorAll('.global-cutoff-select');
+                globalSelects.forEach(selectElement => {
+                    // Clear existing
+                    selectElement.innerHTML = '';
+                    // Repopulate
+                    appCutoffs.forEach(cutoff => {
+                        const option = document.createElement('option');
+                        option.textContent = cutoff;
+                        selectElement.appendChild(option);
+                    });
+                });
+
+                // 3. Sync Dashboard Display Title
+                const dashboardDisplay = document.querySelector('.global-cutoff-display');
+                if (dashboardDisplay) {
+                    dashboardDisplay.textContent = newCutoffVal;
+                }
+
+                // 4. UI Feedback
+                const originalBtnText = btnUpdateCutoff.innerHTML;
+                btnUpdateCutoff.innerHTML = '<i class="fas fa-check-circle"></i> <span>Synced Globally!</span>';
+                btnUpdateCutoff.style.backgroundColor = 'var(--accent-green)';
+                newCutoffInput.value = ''; // clear input
+                
+                // Revert button after 2 seconds
+                setTimeout(() => {
+                    btnUpdateCutoff.innerHTML = originalBtnText;
+                    btnUpdateCutoff.style.backgroundColor = 'var(--accent-blue)';
+                }, 2000);
+            }
+        });
+
+        /* --- 8. PAYSLIP MODAL LOGIC --- */
+        const payslipModal = document.getElementById('payslip-modal');
+        const payslipModalDesc = document.getElementById('payslip-modal-desc');
+
+        function openPayslipModal(employeeName) {
+            payslipModalDesc.innerHTML = `Reviewing computation variance for <strong>${employeeName}</strong>.`;
+            payslipModal.classList.remove('hidden');
+        }
+
+        function closePayslipModal() {
+            payslipModal.classList.add('hidden');
+        }
+
+        /* --- 9. SUBMIT PAYROLL BATCH --- */
+        function submitPayrollBatch(btnElement) {
+            // Change button to processing state
+            btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Processing...</span>';
+            btnElement.classList.add('opacity-80', 'cursor-not-allowed');
+            
+            // Simulate a network delay, then show success state
+            setTimeout(() => {
+                btnElement.innerHTML = '<i class="fas fa-check-circle"></i> <span>Batch Submitted</span>';
+                btnElement.classList.remove('bg-[var(--accent-blue)]', 'opacity-80', 'cursor-not-allowed');
+                btnElement.classList.add('bg-[var(--accent-green)]');
+                btnElement.disabled = true;
+            }, 1500);
+        }
+
+        /* --- 10. EXCEPTION WARNING MODAL LOGIC --- */
+        const warningModal = document.getElementById('warning-modal');
+
+        function openWarningModal() {
+            warningModal.classList.remove('hidden');
+        }
+
+        function closeWarningModal() {
+            warningModal.classList.add('hidden');
+        }
+
+        function routeToExceptions() {
+            // Hide the modal first
+            closeWarningModal();
+            // Use your existing sidebar routing logic to switch to the Exception Report
+            navigateTo('view-exceptions');
+        }
+    </script>
+</body>
+</html>
