@@ -1054,9 +1054,40 @@
     </div>
 <!-- 4. COMP VARIANCE MODAL (SETH) -->
     <div id="modal-variance" class="fixed inset-0 bg-black/70 z-[500] hidden flex items-center justify-center">
-        <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-2xl w-full max-w-lg p-6">
-            <h2 class="text-xl font-bold text-white mb-2">Variance Audit</h2>
-            <p class="text-[var(--text-secondary)] text-sm mb-6">Reviewing +28.2% Net Pay increase for Seth William Mores.</p>
+        <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-2xl w-full max-w-xl p-6">
+            <h2 class="text-xl font-bold text-white mb-2">Variance Audit & Payslip Breakdown</h2>
+            <p class="text-[var(--text-secondary)] text-sm mb-4">Reviewing +28.2% Net Pay increase for Seth William Mores (Sales).</p>
+
+            <!-- Side-by-Side Cutoff Comparison -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-[var(--bg-main)] p-3 rounded-lg border border-[var(--border-color)] text-xs">
+                    <div class="font-bold text-[var(--text-secondary)] uppercase mb-2">Previous Cutoff (Aug 16-31)</div>
+                    <div class="flex justify-between mb-1"><span>Gross Pay:</span> <span class="text-white">₱ 9,400.00</span></div>
+                    <div class="flex justify-between mb-1"><span>Deductions:</span> <span class="text-[var(--accent-red)]">₱ 2,200.00</span></div>
+                    <div class="flex justify-between border-t border-[var(--border-color)] pt-1 font-bold">
+                        <span>Net Pay:</span> <span class="text-white">₱ 7,200.00</span>
+                    </div>
+                </div>
+                <div class="bg-[var(--bg-main)] p-3 rounded-lg border border-blue-500/30 text-xs">
+                    <div class="font-bold text-[var(--accent-blue)] uppercase mb-2">Current Cutoff (Sep 01-15)</div>
+                    <div class="flex justify-between mb-1"><span>Gross Pay:</span> <span class="text-white font-bold">₱ 12,045.57</span></div>
+                    <div class="flex justify-between mb-1"><span>Deductions:</span> <span class="text-[var(--accent-red)]">₱ 2,850.00</span></div>
+                    <div class="flex justify-between border-t border-[var(--border-color)] pt-1 font-bold">
+                        <span>Net Pay:</span> <span class="text-[var(--accent-green)] text-sm">₱ 9,195.57 (+28.2%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Gross Pay Breakdown -->
+            <div class="bg-[var(--bg-main)] p-3 rounded-lg border border-[var(--border-color)] mb-4 text-xs space-y-1.5">
+                <div class="font-bold text-white uppercase text-[10px] tracking-wide mb-1 border-b border-[var(--border-color)] pb-1">Gross Pay Composition (Current Period)</div>
+                <div class="flex justify-between text-[var(--text-secondary)]"><span>Basic Pay (Regular Hours):</span> <span class="text-white">₱ 8,500.00</span></div>
+                <div class="flex justify-between text-[var(--text-secondary)]"><span>Overtime Pay (Peak Sales Season OT):</span> <span class="text-[var(--accent-orange)]">₱ 2,345.57</span></div>
+                <div class="flex justify-between text-[var(--text-secondary)]"><span>Holiday / Premium Pay:</span> <span class="text-white">₱ 1,200.00</span></div>
+                <div class="flex justify-between border-t border-[var(--border-color)] pt-1 font-bold text-white">
+                    <span>Total Gross Earnings:</span> <span class="text-[var(--accent-green)]">₱ 12,045.57</span>
+                </div>
+            </div>
 
             <div class="mb-4">
                 <div class="flex justify-between items-center mb-2">
@@ -1065,7 +1096,7 @@
                         <i class="fas fa-robot"></i> Generate AI Suggestion
                     </button>
                 </div>
-                <textarea id="variance-remarks" rows="4" class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent-blue)] outline-none transition-all" placeholder="Enter justification for variance..."></textarea>
+                <textarea id="variance-remarks" rows="3" class="w-full bg-[var(--bg-main)] text-white border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm focus:border-[var(--accent-blue)] outline-none transition-all" placeholder="Enter justification for variance..."></textarea>
             </div>
 
             <div class="flex justify-between items-center pt-4 border-t border-[var(--border-color)]">
